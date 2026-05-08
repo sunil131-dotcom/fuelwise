@@ -8,376 +8,337 @@ Project:  Final Year Thesis — Niels Brock
 Course:   BSc Computer Science
 
 ============================================================
-  WHAT'S NEW IN v2.0
-============================================================
+ # FuelWise — AI-Based Personalized Nutrition System
 
-- Supports 5 health conditions (was 2):
-    * Type 2 Diabetes
-    * Pre-Diabetes        (NEW)
-    * Hypertension        (NEW)
-    * Weight Management   (NEW)
-    * IBS
-- Multi-condition support — users can select multiple concerns
-- 7-day rotating meal plans (was 1-day)
-- Exercise recommendations with condition-aware safety filtering
-- In-app notifications + positive streak tracking
-- Ingredient-level allergy filtering
-- 2,395-food nutrition database (Kaggle import)
-- Quick-update modal for fast plan regeneration
-- DEV_MODE on-screen OTP/link display for testing without SMTP
+A web-based dietary recommendation system for adults with type 2 diabetes, prediabetes, irritable bowel syndrome (IBS), hypertension and weight-management goals. FuelWise generates personalized seven-day meal plans through a **hybrid recommendation architecture**: a Groq-hosted Llama-3.3-70B-Versatile large language model serves as the primary plan generator, with a deterministic rule-based engine acting as the safety-net fallback when the LLM is unavailable, rate-limited or returns a plan that fails validation.
 
+The system explicitly supports cultural cuisine preferences (Indian, Asian, Mediterranean, Western, African, Latin American), religious dietary law (halal, kosher), dietary preferences (vegetarian, vegan, gluten-free) and ingredient-level allergen filtering with curated keyword expansion.
 
-============================================================
-  REQUIREMENTS
-============================================================
+---
 
-- XAMPP (Apache + MySQL + PHP 8.0+)
-- Python 3.8+  (one-time, for CSV import)
-- pandas       (pip install pandas)
-- PHPMailer    (for email)
-- A Gmail account with 2FA + App Password (for SMTP)
+## Table of Contents
 
+1. [System Requirements](#1-system-requirements)
+2. [Quick Install (XAMPP)](#2-quick-install-xampp)
+3. [Database Setup](#3-database-setup)
+4. [Configuration](#4-configuration)
+5. [First Run](#5-first-run)
+6. [Project Structure](#6-project-structure)
+7. [How the Recommendation Engine Works](#7-how-the-recommendation-engine-works)
+8. [Admin Panel](#8-admin-panel)
+9. [Troubleshooting](#9-troubleshooting)
+10. [Acknowledgements](#10-acknowledgements)
 
-============================================================
-  INSTALLATION STEPS
-============================================================
+---
 
-STEP 1 — Place the project folder
-----------------------------------------
-Copy the `fuelwise/` folder to:
+## 1. System Requirements
 
-    C:\xampp\htdocs\fuelwise\
+| Component | Version |
+|---|---|
+| PHP | 8.0 or higher |
+| MySQL / MariaDB | 5.7+ / 10.4+ |
+| Apache | 2.4+ (with `mod_rewrite` enabled) |
+| Python (one-time, for food import only) | 3.8+ with `pandas` |
+| Recommended environment | XAMPP 8.0+ on Windows / macOS / Linux |
+| Internet access | Required for the Groq LLM primary path and SMTP password recovery |
 
-Start XAMPP's Apache and MySQL from the control panel.
+**Required PHP extensions:** `mysqli`, `curl`, `openssl`, `mbstring`, `json` (all enabled by default in XAMPP).
 
+---
 
-STEP 2 — Create the database
-----------------------------------------
-1. Open phpMyAdmin:  http://localhost/phpmyadmin
-2. Import in this order:
-       db/fuelwise.sql        (schema — all tables)
-       db/fuelwise_seed.sql   (45 curated meals + 28 exercises)
+## 2. Quick Install (XAMPP)
 
+The fastest way to get FuelWise running on a fresh machine.
 
-STEP 3 — Import the 2,395-food nutrition database
-----------------------------------------
-The Kaggle nutrition CSVs live in `db/datasets/`. They need
-to be processed once into an SQL file, then imported.
+### Step 1 — Install XAMPP
 
-1. Open a terminal, cd into the db folder:
+Download XAMPP from <https://www.apachefriends.org> and install with default options. Start **Apache** and **MySQL** from the XAMPP control panel.
 
-       cd C:\xampp\htdocs\fuelwise\db
+### Step 2 — Place the project files
 
-2. Install pandas if you don't have it:
+Extract the contents of `fuelwise-v2.zip` so that the `fuelwise/` folder sits inside XAMPP's `htdocs/` directory:
 
-       pip install pandas
+```
+C:\xampp\htdocs\fuelwise\         (Windows)
+/Applications/XAMPP/htdocs/fuelwise/   (macOS)
+/opt/lampp/htdocs/fuelwise/       (Linux)
+```
 
-3. Run the importer:
+You should now have a folder structure like:
 
-       python import_food_csvs.py
+```
+htdocs/
+└── fuelwise/
+    ├── api/
+    ├── admin/
+    ├── includes/
+    ├── db/
+    ├── css/
+    ├── js/
+    ├── index.php
+    ├── README.md
+    └── ...
+```
 
-   Expected output:
-       Total foods after dedup: 2395
-       SQL file generated: food_nutrition_import.sql
+### Step 3 — Continue to database setup (next section)
 
-4. Import the generated file in phpMyAdmin:
+---
 
-       db/food_nutrition_import.sql
+## 3. Database Setup
 
-   This populates the `food_nutrition` table with 2,395 foods
-   classified for diabetes/IBS/hypertension/prediabetes/
-   weight-loss safety + FODMAP/GI categories.
+FuelWise uses a single MySQL database called `fuelwise`. Set-up takes two SQL imports plus one optional Python script.
 
-   Classification sources (citable for thesis):
-       - Atkinson et al. 2021 — Glycemic Index
-       - Bertin et al. 2024    — FODMAP levels
-       - AHA Guidelines        — sodium thresholds
-       - WHO 2020              — calorie/fiber thresholds
+### Step 1 — Create the database and schema
 
+1. Open phpMyAdmin: <http://localhost/phpmyadmin>
+2. Click **New** in the left sidebar and create a database called `fuelwise` (collation: `utf8mb4_general_ci`).
+3. With `fuelwise` selected, click the **Import** tab.
+4. Choose `db/fuelwise.sql` from this project and click **Go**.
 
-STEP 4 — Configure email (Gmail SMTP)
-----------------------------------------
-1. Enable 2-Step Verification:
-       https://myaccount.google.com/security
+This creates all 15 tables (`users`, `admins`, `health_profiles`, `recommendations`, `weekly_meals`, `food_nutrition`, `foods`, `exercises`, `notifications`, `user_streaks`, `profile_updates`, `password_resets`, `admin_logs`, `chat_rooms`, `chat_messages`, `chatbot_messages`) with correct foreign keys.
 
-2. Generate an App Password:
-       https://myaccount.google.com/apppasswords
+### Step 2 — Load the food knowledge base
 
-3. Open `includes/db.php` and update:
+The 2,395-row `food_nutrition` table is built offline by classifying five Kaggle nutrition CSVs against published clinical thresholds (Atkinson et al. 2021 for glycaemic index, Bertin et al. 2024 for FODMAP, the AHA DASH thresholds for sodium, and WHO dietary guidelines for weight management).
 
-       define('MAIL_USERNAME', 'your.email@gmail.com');
-       define('MAIL_PASSWORD', 'your16charapppassword');
-       define('MAIL_FROM',     'your.email@gmail.com');
+A pre-built SQL dump is provided so you do **not** need to run Python. In phpMyAdmin, with `fuelwise` selected, click **Import** again and load:
 
-   IMPORTANT: The App Password is 16 characters, no spaces.
-   Do NOT use your normal Gmail password.
+```
+db/food_nutrition_import.sql
+```
 
-4. Install PHPMailer (choose ONE):
+(This may take 10–30 seconds — it inserts 2,395 rows.)
 
-   Option A — Composer:
-       cd C:\xampp\htdocs\fuelwise
-       composer require phpmailer/phpmailer
+> **Optional — rebuild the food classification yourself:**
+> If you want to regenerate the classification (for example, after adjusting thresholds), run the Python importer instead:
+> ```bash
+> cd db/
+> pip install pandas
+> python import_food_csvs.py
+> ```
+> This reads the five CSVs in `db/datasets/`, applies the rule-based classifier, and writes a fresh `food_nutrition_import.sql`. Then re-import that file in phpMyAdmin.
 
-   Option B — Manual:
-       Download from github.com/PHPMailer/PHPMailer
-       Extract to:  fuelwise/phpmailer/
-       (src/PHPMailer.php must exist at that path.)
+### Step 3 — (Optional) Seed the curated meals and exercise library
 
-5. Enable OpenSSL in PHP:
-       - Open C:\xampp\php\php.ini
-       - Find `;extension=openssl`, remove the semicolon
-       - Save and restart Apache
+If they are not already populated by `fuelwise.sql`, also import:
 
+```
+db/foods_seed.sql       (45 culturally-tagged meal templates)
+db/exercises_seed.sql   (exercise library with safety filters)
+```
 
-STEP 5 — DEV MODE (test without SMTP)
-----------------------------------------
-If you haven't set up email but want to test auth flows:
+---
 
-   In includes/db.php:
-       define('DEV_MODE', true);   // already set by default
+## 4. Configuration
 
-When DEV_MODE is true AND email sending fails:
-   - Password reset links appear on the forgot-password page
-   - Admin OTPs appear on the verify-otp page
-   - Both shown in a yellow dev-mode box
+All deployment-specific settings live in a single file: `includes/config.php`.
 
->>> SET `DEV_MODE` TO `false` BEFORE DEPLOYMENT. <<<
+You will need to provide your own credentials for two external services:
 
+### 4.1 Database credentials
 
-STEP 6 — Access the app
-----------------------------------------
-User site:   http://localhost/fuelwise/
-Admin panel: http://localhost/fuelwise/admin/login.php
+Open `includes/config.php` and check the database block:
 
-Default admin credentials:
-       Email:    admin@fuelwise.com
-       Password: Admin@123
-       (Change this after first login.)
+```php
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');         // empty by default in XAMPP
+define('DB_NAME', 'fuelwise');
+```
 
+The XAMPP defaults work out of the box. If you set a MySQL password, update `DB_PASS`.
 
-============================================================
-  PROJECT STRUCTURE
-============================================================
+### 4.2 Groq API key (required for the LLM primary path)
 
+1. Sign up for a free Groq account at <https://console.groq.com>.
+2. Generate an API key from the Groq console.
+3. Paste it into `includes/config.php`:
+
+```php
+define('GROQ_API_KEY', 'gsk_your_key_here');
+define('GROQ_MODEL',   'llama-3.3-70b-versatile');
+```
+
+> **Without a valid Groq key**, plan generation will silently fall back to the deterministic rule-based pipeline. The system remains fully functional but loses the LLM-generated meal variety described in §4.4.2 of the thesis.
+
+### 4.3 SMTP credentials (required for password reset and admin OTP)
+
+FuelWise sends two kinds of email: user password resets and admin OTP codes. Configure your SMTP block in `includes/config.php`:
+
+```php
+define('SMTP_HOST',     'smtp.gmail.com');
+define('SMTP_PORT',     587);
+define('SMTP_USER',     'your.email@gmail.com');
+define('SMTP_PASS',     'your-16-char-gmail-app-password');
+define('SMTP_FROM',     'your.email@gmail.com');
+define('SMTP_FROMNAME', 'FuelWise');
+```
+
+> **Gmail users:** you must use an **App Password** (not your normal Gmail password). Create one at <https://myaccount.google.com/apppasswords> after enabling 2-Step Verification.
+>
+> **Skipping email entirely:** if you only need to test the recommendation engine, leave the SMTP block at its placeholder values. Registration will still work — only password reset and admin OTP delivery require functional email.
+
+---
+
+## 5. First Run
+
+With Apache + MySQL running and `fuelwise.sql` + `food_nutrition_import.sql` loaded:
+
+1. Open <http://localhost/fuelwise/> in your browser.
+2. Click **Register** and create a user account.
+3. Click **Complete Health Assessment** on the dashboard. Fill in:
+   - Age, gender, weight, height, activity level
+   - Target health condition (one or more of: type 2 diabetes, prediabetes, IBS, hypertension, weight management)
+   - Dietary preference (vegetarian, vegan, halal, kosher, gluten-free, none)
+   - Cultural cuisine (Indian, Asian, Mediterranean, Western, African, Latin, universal)
+   - Allergens (comma-separated, e.g. `peanut, shellfish`)
+   - Optional: blood pressure, glucose, cholesterol, insulin
+4. Click **Generate Plan**. The system will:
+   - Try the Groq LLM path first (≈4 seconds).
+   - If validation fails or the API is unavailable, fall back to the rule-based pipeline (under 1 second).
+   - Render a seven-day plan with day tabs, breakfast/lunch/dinner/snacks, and macronutrient breakdowns.
+5. Each generated plan is recorded in the `recommendations` table. The `source` column shows which path produced the plan: `'llm'` or `'dataset'`.
+
+### Reproducing the thesis test cases
+
+The eight walkthrough test cases described in §4.5.2 of the thesis can be reproduced by registering test users with the parameters from Table 4.1 — for example, **T4** is a multi-condition user with diabetes + hypertension, vegetarian, Indian cuisine. Plan generation under that profile should produce a low-GI, low-sodium, vegetarian, Indian-leaning seven-day plan in either path.
+
+---
+
+## 6. Project Structure
+
+```
 fuelwise/
-├── admin/                 Admin dashboard
-│   ├── index.php          Stats (6-condition breakdown)
-│   ├── users.php          User management
-│   ├── foods.php          Curated meals CRUD
-│   ├── exercises.php      NEW — Exercises CRUD
-│   ├── recommendations.php Plan history
-│   ├── login.php          OTP-gated login
-│   └── verify-otp.php
+├── index.php                    # Public landing page
+├── about.php                    # About / disclaimer page
+├── register.php / login.php     # User authentication
+├── forgot-password.php          # Password reset flow
+├── assessment.php               # Health-assessment form
+├── dashboard.php                # User dashboard
+├── recommendation.php           # 7-day plan viewer (day tabs)
+├── history.php                  # Past plan history
+├── chatbot.php                  # Groq-powered nutrition chatbot
+├── chat.php                     # Live chat with admin
+│
 ├── api/
-│   └── recommend.php      7-day plan engine + exercises
-├── css/
-│   ├── style.css          Core design
-│   ├── dashboard.css
-│   ├── auth.css
-│   ├── admin.css
-│   └── fuelwise-v2.css    NEW — modal, notifications,
-│                          day tabs, exercise cards
-├── db/
-│   ├── fuelwise.sql                Schema (all tables)
-│   ├── fuelwise_seed.sql           Meals + exercises
-│   ├── import_food_csvs.py         Python → SQL generator
-│   ├── food_nutrition_import.sql   Generated (2,395 foods)
-│   └── datasets/                   Kaggle CSVs (5 files)
+│   └── recommend.php            # Plan-generation endpoint (orchestrates LLM + fallback)
+│
+├── admin/                       # OTP-gated admin panel
+│   ├── login.php / verify-otp.php
+│   ├── index.php                # Admin dashboard
+│   ├── users.php                # User management
+│   ├── foods.php                # Food database management
+│   ├── exercises.php            # Exercise library
+│   ├── recommendations.php      # View all generated plans
+│   └── chat.php                 # Live-chat admin interface
+│
 ├── includes/
-│   ├── db.php             Config + helpers + streaks +
-│                          notifications + allergy matcher
-│   ├── mailer.php         PHPMailer + dev-mode helpers
-│   ├── header.php
-│   └── footer.php
-├── js/main.js
-├── logs/                  mail.log (auto-created)
-├── index.php
-├── about.php
-├── register.php
-├── login.php              Tracks streaks on login
-├── logout.php
-├── forgot-password.php    Dev-mode reset link display
-├── reset-password.php
-├── assessment.php         5 conditions, split BP inputs
-├── recommendation.php     7-day tabs, exercises, modal
-├── dashboard.php          Notifications, streak, today
-├── history.php
-└── README.txt
+│   ├── config.php               # *** CONFIGURE THIS *** (DB, Groq, SMTP)
+│   ├── db.php                   # getDB(), foodMatchesAllergies()
+│   ├── gemini.php               # Groq client + ALLERGEN_MAP + validators
+│   ├── mailer.php               # PHPMailer wrapper
+│   ├── header.php / footer.php
+│
+├── css/                         # 5 stylesheets
+├── js/main.js                   # Day-tab switcher, conditional fields
+│
+└── db/
+    ├── fuelwise.sql                  # Schema (15 tables)
+    ├── food_nutrition_import.sql     # Pre-classified 2,395 foods
+    ├── foods_seed.sql                # 45 curated meal templates
+    ├── exercises_seed.sql            # Exercise library
+    ├── import_food_csvs.py           # Optional: re-classify the CSVs
+    └── datasets/
+        └── FOOD-DATA-GROUP1..5.csv   # Source Kaggle datasets
+```
 
+---
 
-============================================================
-  DATABASE SCHEMA (v2.0)
-============================================================
+## 7. How the Recommendation Engine Works
 
-From v1:
-   users, health_profiles, foods, recommendations,
-   password_resets, admins, admin_logs
+A complete description is given in **§4.4.2 of the thesis**. In brief:
 
-New in v2:
-   food_nutrition     → 2,395 foods with nutrients + flags
-   weekly_meals       → 7-day meal plan storage
-   exercises          → Exercise library with safety flags
-   notifications      → In-app notification feed
-   user_streaks       → Login streak tracking
-   profile_updates    → Analytics log for thesis
+1. **Profile loading** — `api/recommend.php` reads the user's `health_profiles` row.
+2. **Target computation** — TDEE, per-meal calorie targets, and condition-specific macro/fiber/sodium targets are computed deterministically.
+3. **LLM primary path** — `geminiRecommend()` in `includes/gemini.php` builds an anonymized prompt (no user name or email is ever sent to Groq), calls the Groq endpoint, parses the JSON response, and runs three validators:
+   - **Allergen-leakage check** against the 24-entry `ALLERGEN_MAP` (catches derivatives like `marzipan` from `nuts`, `satay` from `peanuts`).
+   - **Structural-completeness check** (7 days × 4 meals).
+   - **Macronutrient-sanity check** against the user's targets.
+4. **Rule-based fallback** — If any validator rejects the plan, or the API call fails or times out, control falls through to `fetchMealsWithFallback()` in `api/recommend.php`. This:
+   - Constructs a SQL query against the curated `foods` table conjoining all applicable safety, dietary and cultural filters.
+   - Implements a four-tier graceful-degradation fallback for empty candidate sets: drop cultural filter → drop dietary filter → category-only.
+   - Applies application-layer allergen substring filtering through `foodMatchesAllergies()` in `includes/db.php`.
+5. **Persistence** — Plan is written as one INSERT into `recommendations` (with `source = 'llm'` or `source = 'dataset'`) plus seven INSERTs into `weekly_meals`, plus an UPDATE of `user_streaks`.
+6. **Render** — User is redirected to `recommendation.php?id=...` which displays the plan as day tabs.
 
-Expanded condition_type enum:
-   diabetes | ibs | hypertension | prediabetes |
-   weight_management | both | multiple
+---
 
-New health_profiles columns:
-   conditions_list         (comma-separated multi-select)
-   blood_pressure_systolic, blood_pressure_diastolic
-   insulin_level, cholesterol_total
-   weight_goal, target_weight
+## 8. Admin Panel
 
+Access the admin panel at <http://localhost/fuelwise/admin/>.
 
-============================================================
-  FEATURE CHECKLIST
-============================================================
+1. Enter email + password.
+2. Receive a six-digit OTP by email (ten-minute expiry).
+3. Enter OTP to access the dashboard.
 
-[✓] 5 health conditions with safety-aware filtering
-[✓] Multi-condition combinations (intersection of rules)
-[✓] 7-day rotating meal plan with day tabs
-[✓] Shuffle / regenerate button
-[✓] Quick-update modal with pre-filled saved profile
-[✓] "Skip — Use Saved Profile" 1-click option
-[✓] Ingredient-level allergy filtering
-[✓] Exercise recommendations:
-      - Light cardio/yoga safe for ALL
-      - Gym ONLY for weight-management + moderate+ activity
-      - Hypertension blocks heavy lifting (AHA)
-      - IBS blocks abdominal-pressure exercises
-[✓] In-app notification system
-[✓] Positive streak tracking (supportive, no shaming)
-[✓] Welcome / inactivity / streak milestone triggers
-[✓] Clinical thresholds with graceful degradation
-      (all medical fields optional)
-[✓] Admin panel with exercise CRUD
-[✓] DEV_MODE for testing without email
+The admin panel allows: managing users, food database, exercise library, viewing all generated plans, viewing audit logs, and handling live-chat messages from users.
 
+---
 
-============================================================
-  THESIS CITATIONS USED IN CODE
-============================================================
+## 9. Troubleshooting
 
-Dietary rules:
-   Atkinson et al. (2021)  — Glycemic Index Tables
-   Bertin et al. (2024)    — FODMAP classifications
-   AHA DASH Guidelines      — Sodium/potassium thresholds
-   WHO 2020                 — Calorie/fiber benchmarks
-   ADA Position Statement   — Diabetes macro ratios
+### "Plan generation takes a long time then returns an empty plan"
 
-Exercise safety:
-   WHO Physical Activity Guidelines 2020
-   CDC Physical Activity Basics
-   ADA Exercise Position Statement (2023)
-   AHA Exercise Guidelines for Hypertension (2021)
-   Ainsworth et al. (2011) — Compendium of Physical
-     Activities (MET values)
+Most likely the Groq API is unreachable AND the rule-based fallback's SQL filters returned no candidates (e.g. an unusual combination of condition + diet + culture). Check:
 
-Data sources:
-   Kaggle Food Nutrition Dataset (5 CSVs, 2,395 foods)
-   Kaggle Workout Dataset (gym exercises)
+- `includes/config.php` — is `GROQ_API_KEY` valid?
+- The browser's network tab — is `api/recommend.php` returning a 200?
+- The MySQL `recommendations` table — was a row inserted? If yes with `source = 'dataset'`, fallback is working; if no row at all, the fallback's four-tier degradation also returned empty (rare).
 
+### "Email isn't being sent"
 
-============================================================
-  TROUBLESHOOTING
-============================================================
+- Gmail users: verify you are using a **16-character App Password**, not your account password.
+- Check `includes/config.php` SMTP block.
+- Check `php.ini` — `extension=openssl` must be enabled.
+- Look at PHP's error log (`xampp/apache/logs/error.log`).
 
-Emails don't send
------------------
-1. Check logs/mail.log for error messages
-2. Verify MAIL_PASSWORD is a 16-char App Password (no spaces)
-3. Ensure OpenSSL is enabled in php.ini
-4. Use DEV_MODE=true as workaround during testing
+### "Cannot find /admin/ — 404"
 
-CSV import fails
-----------------
-1. Verify pandas: pip install pandas
-2. Ensure CSVs are in db/datasets/ folder
-3. Python output should show "Total foods after dedup: 2395"
+Apache `mod_rewrite` is not enabled. In `xampp/apache/conf/httpd.conf` un-comment `LoadModule rewrite_module modules/mod_rewrite.so` and restart Apache.
 
-"No suitable meals found"
--------------------------
-1. User preferences may be too restrictive
-2. Check fuelwise_seed.sql imported (should be ~45 meals)
-3. Engine has 4 fallback tiers before giving up
+### "MySQL: Access denied for user 'root'@'localhost'"
 
-7-day tabs not switching
-------------------------
-1. Check browser console for JavaScript errors
-2. Clear cache (Ctrl+Shift+Del)
+You set a MySQL root password but didn't update `DB_PASS` in `includes/config.php`. Update it.
 
-Gym exercises not showing for weight-management user
-----------------------------------------------------
-Make sure:
-- User has weight_management OR weight_goal='lose'
-- activity_level is moderately_active, very_active, or extra_active
-(This restriction is by design — AHA/ADA guidelines.)
+### "ImportError: pandas not found" (when running the Python importer)
 
+The Python importer is **optional** — you only need it if you want to regenerate `food_nutrition_import.sql`. For normal use, just import the pre-built SQL file.
 
-============================================================
-  NOTES FOR THESIS DEFENSE
-============================================================
+If you do want to run it: `pip install pandas` (or `pip3 install pandas` on macOS / Linux).
 
-Likely examiner questions:
+### "Got a 'rate limit exceeded' error from Groq"
 
-1. "Why rule-based classification, not ML?"
-   → Transparent, citable, reproducible. Published FODMAP
-     and GI food lists (Atkinson 2021, Bertin 2024) are the
-     clinical standard. ML on 2,395 foods with binary
-     safety labels would just learn the same keyword rules
-     with added opacity.
+Groq's free tier has request-rate limits. Wait one minute, or upgrade your Groq plan. The system will automatically use the rule-based fallback in the meantime, so the user-facing flow is unaffected.
 
-2. "Why block gym exercises for hypertension?"
-   → AHA 2021 recommends avoiding heavy resistance training
-     with uncontrolled BP — isometric effort can spike
-     systolic pressure 10-20 mmHg during the lift.
+---
 
-3. "Why 7-day plans, not daily?"
-   → Reduces decision fatigue. Allows weekly grocery
-     shopping. Matches standard behavioural-adherence
-     research for chronic condition management.
+## 10. Acknowledgements
 
-4. "Why positive streaks, no shaming?"
-   → Published evidence (Michie et al. 2013, Behaviour
-     Change Technique Taxonomy) shows positive reinforcement
-     outperforms guilt-based interventions, especially for
-     chronic-condition adherence.
+- Food nutrition data from five publicly available Kaggle datasets (FOOD-DATA-GROUP1 through GROUP5).
+- Glycaemic-index thresholds: Atkinson et al. (2021), *International tables of glycemic index and glycemic load values 2021*.
+- FODMAP food classifications: Bertin et al. (2024), *The Role of the FODMAP Diet in IBS*; Monash University FODMAP database.
+- Sodium thresholds: American Heart Association DASH guidelines.
+- Weight-management thresholds: World Health Organization dietary guidelines.
+- LLM inference: Groq's hosted Llama-3.3-70B-Versatile.
+- Email transport: PHPMailer.
 
-5. "How do you handle missing clinical values?"
-   → All optional. Engine uses TDEE + condition defaults.
-     Warnings only appear when values ARE provided AND
-     exceed clinical thresholds. No inference of missing
-     values — respects that users may not know these.
+For the full architectural rationale, design decisions, evaluation walkthrough and limitations, see the accompanying thesis document `FINAL PROJECT.docx`.
 
-6. "Why intersect safety filters for multi-condition users?"
-   → Conservative by design. If a food must be both
-     diabetes-safe AND hypertension-safe, we keep only the
-     intersection. Better to show fewer safe foods than
-     recommend something contraindicated.
+---
 
+## License & Disclaimer
 
-============================================================
-  CHANGELOG
-============================================================
+This project is an academic prototype submitted for the CTEC3451 module at De Montfort University. It is **not a medical device** and has not undergone clinical validation. Plans generated by FuelWise should not be used as a substitute for advice from a registered dietitian, physician or other qualified healthcare professional. Users with severe allergies should manually verify each generated meal before consuming it.
 
-v2.0  (current)
-  - 3 new conditions (hypertension, prediabetes, weight mgmt)
-  - 7-day meal planning with day tabs
-  - Exercise recommendations with condition safety
-  - In-app notifications + streak tracking
-  - 2,395-food nutrition DB (Kaggle import)
-  - Quick-update modal
-  - Ingredient-level allergy filtering
-  - Dev-mode OTP display
-  - Admin exercise CRUD
-
-v1.0  (original)
-  - Diabetes + IBS support
-  - Single-day meal plan
-  - OTP admin auth
-  - PHPMailer integration
 
 ============================================================
