@@ -1,0 +1,10 @@
+[2026-04-17 20:55:58] PHPMailer not found — falling back to PHP mail()
+[2026-04-17 20:56:00] PHP mail() to josh@gmail.com → FAILED
+[2026-04-21 11:31:42] PHPMailer not found — falling back to PHP mail()
+[2026-04-21 11:31:44] PHP mail() to josha@gmail.com → FAILED
+[2026-04-21 12:24:51] PHPMailer not found — falling back to PHP mail()
+[2026-04-21 12:24:53] PHP mail() to fuelwise100@gmail.com → FAILED
+[2026-04-21 13:02:16] PHPMailer not found — falling back to PHP mail()
+[2026-04-21 13:02:18] PHP mail() to sunil.ntp1@gmail.com → FAILED
+[2026-04-21 13:04:31] PHPMailer not found — falling back to PHP mail()
+[2026-04-21 13:04:33] PHP mail() to sunil.ntp1@gmail.com → FAILED

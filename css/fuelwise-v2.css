@@ -1,0 +1,283 @@
+/* ==========================================================
+   FuelWise v2.0 — New Component Styles
+   Modal, notifications, streaks, day tabs, exercises, conditions
+   ========================================================== */
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(20, 30, 50, 0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000; padding: 20px;
+    backdrop-filter: blur(3px);
+}
+.modal-box {
+    background: #fff; border-radius: 16px;
+    max-width: 700px; width: 100%;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+    animation: modalIn 0.25s ease-out;
+}
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.modal-header {
+    padding: 20px 28px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, var(--navy-dark), var(--green));
+    color: white; border-radius: 16px 16px 0 0;
+}
+.modal-header h3 { margin: 0; font-size: 1.2rem; color: white; }
+.modal-close {
+    background: rgba(255,255,255,0.2); border: none;
+    color: white; width: 32px; height: 32px; border-radius: 50%;
+    font-size: 1.4rem; cursor: pointer; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { background: rgba(255,255,255,0.35); }
+.modal-body { padding: 28px; }
+.modal-actions {
+    display: flex; gap: 12px; justify-content: flex-end;
+    margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+.modal-actions button { flex: 1; min-width: 200px; padding: 12px 20px; }
+
+/* ---------- Notifications Banner (dashboard) ---------- */
+.notifications-banner {
+    background: linear-gradient(135deg, #fff7ed, #fef3c7);
+    border: 2px solid #fbbf24;
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 24px;
+}
+.notifications-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+}
+.notifications-header h3 { margin: 0; font-size: 1rem; color: #78350f; }
+.notifications-list { display: flex; flex-direction: column; gap: 10px; }
+.notification-item {
+    background: rgba(255,255,255,0.7); border-radius: 10px; padding: 12px;
+    display: flex; gap: 12px; align-items: flex-start;
+    border-left: 4px solid #fbbf24;
+}
+.notification-streak  { border-left-color: #f97316; }
+.notification-success { border-left-color: #22c55e; }
+.notification-warning { border-left-color: #ef4444; }
+.notification-reminder{ border-left-color: #3b82f6; }
+.notification-info    { border-left-color: #6366f1; }
+.notif-icon { font-size: 1.6rem; }
+.notif-content { flex: 1; }
+.notif-content strong { color: var(--navy-dark); display: block; margin-bottom: 2px; }
+.notif-content p { margin: 0; font-size: 0.87rem; color: var(--text-mid); line-height: 1.5; }
+.notif-action {
+    display: inline-block; margin-top: 6px; color: var(--green);
+    font-size: 0.85rem; font-weight: 600; text-decoration: none;
+}
+.notif-dismiss {
+    background: transparent; border: none; font-size: 1.2rem;
+    color: var(--text-light); cursor: pointer; padding: 4px 8px;
+}
+.notif-dismiss:hover { color: var(--text-dark); }
+
+.btn-text-sm {
+    background: transparent; border: none; color: var(--green);
+    cursor: pointer; font-size: 0.82rem; font-weight: 600; text-decoration: underline;
+}
+
+/* ---------- Activity Item (recent activity list) ---------- */
+.activity-item {
+    display: flex; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-item.unread { background: linear-gradient(90deg, rgba(39,174,96,0.05), transparent); padding-left: 12px; border-radius: 8px 0 0 8px; }
+.activity-icon { font-size: 1.4rem; flex-shrink: 0; }
+.activity-content { flex: 1; }
+.activity-content strong { color: var(--navy-dark); display: block; }
+.activity-content p { margin: 4px 0; font-size: 0.85rem; color: var(--text-mid); }
+.activity-content small { color: var(--text-light); font-size: 0.75rem; }
+
+/* ---------- Condition Selection Cards (assessment) ---------- */
+.conditions-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px; margin-bottom: 12px;
+}
+.condition-card {
+    position: relative; cursor: pointer;
+    background: #fff; border: 2px solid var(--border); border-radius: 12px;
+    padding: 20px; transition: all 0.2s ease;
+    display: block; text-align: left;
+}
+.condition-card:hover { border-color: var(--green); transform: translateY(-2px); box-shadow: var(--shadow); }
+.condition-card input[type="checkbox"] { position: absolute; top: 14px; right: 14px; width: 18px; height: 18px; accent-color: var(--green); cursor: pointer; }
+.condition-card input:checked ~ .condition-content { color: var(--green); }
+.condition-card:has(input:checked) {
+    border-color: var(--green);
+    background: linear-gradient(135deg, rgba(39,174,96,0.08), rgba(26,82,118,0.03));
+    box-shadow: 0 4px 16px rgba(39,174,96,0.15);
+}
+.condition-content h4 { margin: 8px 0 6px; color: var(--navy-dark); font-size: 1rem; }
+.condition-content p  { margin: 0; font-size: 0.82rem; color: var(--text-mid); line-height: 1.5; }
+.condition-icon { font-size: 2rem; }
+
+/* ---------- Condition Badge (shown on recommendation page) ---------- */
+.condition-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, rgba(39,174,96,0.12), rgba(26,82,118,0.08));
+    color: var(--navy-dark); padding: 6px 12px; border-radius: 20px;
+    font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(39,174,96,0.3);
+}
+
+/* ---------- Required / Optional form tags ---------- */
+.req      { color: #ef4444; }
+.optional { color: var(--text-light); font-size: 0.78rem; font-weight: 400; }
+.hint     { font-size: 0.78rem; color: var(--text-light); display: block; margin-top: 4px; line-height: 1.4; }
+
+/* ---------- Day Tabs (7-day meal plan) ---------- */
+.day-tabs {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 24px; padding-bottom: 16px;
+    border-bottom: 2px solid var(--border);
+}
+.day-tab {
+    background: var(--light-grey); border: 2px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; cursor: pointer; flex: 1; min-width: 80px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    transition: all 0.2s ease; position: relative;
+    font-family: inherit; color: var(--text-mid);
+}
+.day-tab strong { font-size: 0.85rem; font-weight: 700; color: var(--navy-dark); }
+.day-tab small  { font-size: 0.72rem; color: var(--text-light); }
+.day-tab:hover  { border-color: var(--green); transform: translateY(-1px); }
+.day-tab.active {
+    background: linear-gradient(135deg, var(--navy-dark), var(--green));
+    border-color: var(--green); color: white;
+}
+.day-tab.active strong, .day-tab.active small { color: white; }
+.day-tab.today { border-color: var(--green); }
+.day-tab.today:not(.active) { box-shadow: 0 0 0 2px rgba(39,174,96,0.3); }
+.today-dot {
+    position: absolute; top: 4px; right: 6px; color: var(--green); font-size: 0.6rem;
+}
+.day-tab.active .today-dot { color: #fde68a; }
+
+.day-content { display: none; animation: fadeIn 0.3s ease; }
+.day-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ---------- Meal Item ---------- */
+.meal-item {
+    display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+}
+.meal-item + .meal-item { border-top: 1px solid var(--border); margin-top: 4px; }
+.meal-option-num {
+    color: var(--green); font-weight: 700; font-size: 0.82rem; flex-shrink: 0;
+    padding-top: 2px;
+}
+.meal-item p { margin: 0; font-size: 0.9rem; color: var(--text-dark); line-height: 1.5; }
+
+/* ---------- Exercise Cards ---------- */
+.exercise-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+.exercise-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; transition: all 0.2s ease;
+    border-left: 4px solid var(--green);
+}
+.exercise-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.exercise-card.gym   { border-left-color: #f97316; }
+.exercise-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 8px; margin-bottom: 8px;
+}
+.exercise-header h5 { margin: 0; color: var(--navy-dark); font-size: 0.98rem; }
+.exercise-intensity {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 12px; white-space: nowrap;
+}
+.intensity-light    { background: #dcfce7; color: #166534; }
+.intensity-moderate { background: #fed7aa; color: #9a3412; }
+.intensity-vigorous { background: #fecaca; color: #991b1b; }
+
+.exercise-meta {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    font-size: 0.75rem; color: var(--text-mid); margin-bottom: 8px;
+}
+.exercise-instructions {
+    font-size: 0.82rem; color: var(--text-mid); line-height: 1.5; margin: 6px 0;
+}
+.exercise-warning {
+    font-size: 0.78rem; color: #9a3412; background: #fff7ed;
+    padding: 6px 10px; border-radius: 6px; margin: 6px 0;
+    border-left: 3px solid #f97316;
+}
+.exercise-citation {
+    font-size: 0.7rem; color: var(--text-light); display: block; margin-top: 6px;
+    font-style: italic;
+}
+
+/* ---------- Profile Info Row ---------- */
+.info-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row .label { color: var(--text-mid); }
+.info-row .value {
+    color: var(--text-dark); font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+}
+
+/* ---------- Additional button styles ---------- */
+.btn-outline-green {
+    background: #fff; border: 2px solid var(--green); color: var(--green);
+    padding: 10px 16px; border-radius: var(--radius); font-weight: 600;
+    cursor: pointer; font-family: inherit; font-size: 0.88rem;
+    transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px;
+    text-decoration: none;
+}
+.btn-outline-green:hover { background: var(--green); color: #fff; }
+
+/* ---------- Mobile responsiveness ---------- */
+@media (max-width: 768px) {
+    .day-tabs { gap: 4px; }
+    .day-tab { min-width: 60px; padding: 8px 6px; }
+    .day-tab small { display: none; }
+    .modal-box { max-height: 95vh; }
+    .modal-body { padding: 20px; }
+    .modal-actions button { min-width: 0; width: 100%; }
+    .exercise-grid { grid-template-columns: 1fr; }
+    .conditions-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .notifications-banner { padding: 12px; }
+    .notification-item { padding: 10px; }
+    .notif-icon { font-size: 1.3rem; }
+}
+
+/* ---------- Form section on assessment page ---------- */
+.form-section {
+    background: #fff; border-radius: 16px; padding: 28px;
+    margin-bottom: 20px; border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.section-header {
+    display: flex; gap: 16px; align-items: center;
+    margin-bottom: 24px; padding-bottom: 16px;
+    border-bottom: 2px solid var(--border);
+}
+.section-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--navy-dark), var(--green));
+    color: white; font-size: 1.5rem;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.section-header h3 { margin: 0 0 4px; color: var(--navy-dark); font-size: 1.1rem; }
+.section-header p  { margin: 0; color: var(--text-mid); font-size: 0.85rem; }
+
+.assessment-form { max-width: 1100px; margin: 0 auto; }
