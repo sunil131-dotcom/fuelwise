@@ -4,11 +4,10 @@
 ============================================================
 
 Author:   Sunil Thapa (P2837603)
-Project:  Final Year Thesis — Niels Brock
+Project:  Final Year Thesis 
 Course:   BSc Computer Science
 
 ============================================================
- # FuelWise — AI-Based Personalized Nutrition System
 
 A web-based dietary recommendation system for adults with type 2 diabetes, prediabetes, irritable bowel syndrome (IBS), hypertension and weight-management goals. FuelWise generates personalized seven-day meal plans through a **hybrid recommendation architecture**: a Groq-hosted Llama-3.3-70B-Versatile large language model serves as the primary plan generator, with a deterministic rule-based engine acting as the safety-net fallback when the LLM is unavailable, rate-limited or returns a plan that fails validation.
 
